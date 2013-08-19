@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<assembly>
+  <id>plugin</id>
+  <formats>
+    <format>zip</format>
+  </formats>
+  <includeBaseDirectory>false</includeBaseDirectory>
+  <dependencySets>
+    <dependencySet>
+      <unpack>false</unpack>
+      <outputDirectory>/</outputDirectory>
+      <useProjectArtifact>true</useProjectArtifact>
+      <excludes>
+        <exclude>org.elasticsearch:elasticsearch</exclude>
+        <exclude>org.apache.lucene:lucene-*</exclude>
+        <exclude>log4j:log4j</exclude>
+      </excludes>
+    </dependencySet>
+  </dependencySets>
+  <fileSets>
+    <fileSet>
+      <directory>${project.build.directory}/</directory>
+      <outputDirectory>/</outputDirectory>
+      <includes>
+        <include>${project.name}-${project.version}.jar</include>
+      </includes>
+    </fileSet>
+  </fileSets>
+</assembly>
