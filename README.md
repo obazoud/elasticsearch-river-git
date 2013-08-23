@@ -6,7 +6,7 @@ Welcome to the Git River Plugin for ["Elasticsearch"](http://www.elasticsearch.o
 
 <table>
   <tr>
-    <th>Confluence River Plugin</th><th>ElasticSearch</th>
+    <th>Git River Plugin</th><th>ElasticSearch</th>
   </tr>
   <tr>
     <td>master (0.0.1)</td><td>master (0.90.3)</td>
@@ -20,11 +20,12 @@ Welcome to the Git River Plugin for ["Elasticsearch"](http://www.elasticsearch.o
 Just type :
 
 <pre>
-$ bin/plugin -install obazoud/elasticsearch-river-git/0.0.1
--> Installing obazoud/elasticsearch-river-git/0.0.1...
-Trying https://github.com/downloads/obazoud/elasticsearch-river-git-0.0.1.zip...
-Downloading ...DONE
-Installed git-river
+% bin/plugin --install com.bazoud.elasticsearch/elasticsearch-river-git/0.0.1
+-> Installing com.bazoud.elasticsearch/elasticsearch-river-git/0.0.1...
+Trying http://download.elasticsearch.org/com.bazoud.elasticsearch/elasticsearch-river-git/elasticsearch-river-git-0.0.1.zip...
+Trying http://search.maven.org/remotecontent?filepath=com/bazoud/elasticsearch/elasticsearch-river-git/0.0.1/elasticsearch-river-git-0.0.1.zip...
+Downloading ..............DONE
+Installed river-git into /path/to/elasticsearch/plugins/river-git
 </pre>
 
 #### Creating a Git river
