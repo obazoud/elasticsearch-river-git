@@ -1,9 +1,12 @@
 package com.bazoud.elasticsearch.river.git;
 
 import java.io.File;
+import java.lang.reflect.InvocationTargetException;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Pattern;
 
+import org.apache.commons.beanutils.BeanUtilsBean2;
 import org.elasticsearch.ExceptionsHelper;
 import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.block.ClusterBlockException;
@@ -26,63 +29,63 @@ import com.bazoud.elasticsearch.river.git.guava.functions.CommitIndexFunction;
 import com.bazoud.elasticsearch.river.git.guava.functions.FetchRepositoryFunction;
 import com.bazoud.elasticsearch.river.git.guava.functions.InitializeFunction;
 import com.bazoud.elasticsearch.river.git.guava.predicates.FetchOrCloneRepositoryPredicate;
+import com.fasterxml.jackson.databind.util.BeanUtil;
+import com.google.common.base.CaseFormat;
+import com.google.common.base.Function;
+import com.google.common.base.Functions;
 import com.google.common.base.Optional;
+import com.google.common.collect.FluentIterable;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.Maps;
+
+import static com.bazoud.elasticsearch.river.git.guava.Maps.transformKeys;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * @author Olivier Bazoud
  */
 public class GitRiver extends AbstractRiverComponent implements River {
-    private ThreadPool threadPool;
     private Client client;
-
     private volatile Thread indexerThread;
     private volatile boolean closed;
+    @Inject
+    private FunctionFlowFactory functionFlowFactory;
 
-    private String name;
-    private String uri;
-    private int updateRate;
-    private String indexName;
-    private String typeName;
-    private String workingDir;
-    private String issueRegex;
-    private boolean indexingDiff;
-
-    public final static String INDEX_NAME = "git";
-    public final static String TYPE_NAME = "git";
+    private Context context = new Context();
 
     @Inject
-    protected GitRiver(RiverName riverName, RiverSettings settings, @RiverIndexName String riverIndexName, Client client, ThreadPool threadPool) {
+    protected GitRiver(RiverName riverName, RiverSettings settings, @RiverIndexName String riverIndexName, Client client, ThreadPool threadPool) throws InvocationTargetException, IllegalAccessException {
         super(riverName, settings);
         this.client = client;
-        this.threadPool = threadPool;
-
         logger.info("Creating Git river");
 
         if (settings.settings().containsKey("git")) {
             Map<String, Object> gitSettings = (Map<String, Object>) settings.settings().get("git");
-            this.name = XContentMapValues.nodeStringValue(gitSettings.get("name"), null);
-            this.uri = XContentMapValues.nodeStringValue(gitSettings.get("uri"), null);
-            this.updateRate = XContentMapValues.nodeIntegerValue(gitSettings.get("update_rate"), 15 * 60 * 1000);
-            this.typeName = XContentMapValues.nodeStringValue(gitSettings.get("type"), TYPE_NAME);
-            this.workingDir = XContentMapValues.nodeStringValue(gitSettings.get("working_dir"), System.getProperty("user.home") + File.separator + ".elasticsearch-river-git");
-            this.issueRegex = XContentMapValues.nodeStringValue(gitSettings.get("issue_regex"), null);
-            this.indexingDiff = XContentMapValues.nodeBooleanValue(gitSettings.get("indexing_diff"), false);
-            this.indexName = riverName.name();
+            BeanUtilsBean2.getInstance().populate(context, transformKeys(gitSettings, new Function<String, String>() {
+                @Override
+                public String apply(String input) {
+                    return CaseFormat.UPPER_UNDERSCORE.to(CaseFormat.LOWER_CAMEL, input);
+                }
+            }));
         }
+        context.setRiverName(riverName.name());
+        context.setRiverIndexName(riverIndexName);
+        context.setClient(client);
+        context.setIssuePattern(compilePattern(context.getIssueRegex()));
     }
 
     @Override
     public void start() {
         logger.info("Starting Git River: name '{}', uri '{}', updateRate '{}', indexing to '{}'/'{}'",
-            this.name, this.uri, this.updateRate, this.indexName, typeName);
+            context.getName(), context.getUri(), context.getUpdateRate(), context.getRiverName(), context.getType());
 
         try {
             client.admin().cluster().prepareHealth()
                 .setWaitForYellowStatus()
                 .execute().actionGet();
 
-            client.admin().indices().prepareCreate(indexName).execute().actionGet();
-            logger.info("Index '{}'/'{}' created", this.indexName, typeName);
+            client.admin().indices().prepareCreate(context.getRiverName()).execute().actionGet();
+            logger.info("Index '{}'/'{}' created", context.getRiverName(), context.getType());
 
         } catch (Exception e) {
             if (ExceptionsHelper.unwrapCause(e) instanceof IndexAlreadyExistsException) {
@@ -90,7 +93,7 @@ public class GitRiver extends AbstractRiverComponent implements River {
             } else if (ExceptionsHelper.unwrapCause(e) instanceof ClusterBlockException) {
                 // ok, not recovered yet..., lets start indexing and hope we recover by the first bulk
             } else {
-                logger.warn("failed to create index '{}', disabling river...", e, indexName);
+                logger.warn("failed to create index '{}', disabling river...", e, context.getRiverName());
                 return;
             }
         }
@@ -109,6 +112,16 @@ public class GitRiver extends AbstractRiverComponent implements River {
         closed = true;
     }
 
+    private Optional<Pattern> compilePattern(String regex) {
+        Optional<Pattern> issuePattern = Optional.absent();
+        try {
+            issuePattern = Optional.of(Pattern.compile(regex));
+        } catch (Throwable e) {
+            logger.warn("Git river exception occurred when parsing regex |{}|", issuePattern, e);
+        }
+        return issuePattern;
+    }
+
     /**
      * @author Olivier Bazoud
      */
@@ -123,27 +136,8 @@ public class GitRiver extends AbstractRiverComponent implements River {
                 }
 
                 try {
-                    Context context = Context.context()
-                        .name(name)
-                        .uri(uri)
-                        .workingDir(workingDir)
-                        .client(client)
-                        .indexName(indexName)
-                        .issuePattern(compilePattern(issueRegex))
-                        .indexingDiff(indexingDiff)
-                        .build();
-
-                    FunctionFlow.<Context>flow()
-                        .add(new InitializeFunction())
-                        .add(
-                            new PredicateFunction<Context, Context>(
-                                new FetchRepositoryFunction(),
-                                new CloneRepositoryFunction(),
-                                new FetchOrCloneRepositoryPredicate()
-                            )
-                        )
-                        .add(new CommitIndexFunction())
-                        .build()
+                    functionFlowFactory
+                        .create()
                         .apply(context);
 
                 } catch (Exception e) {
@@ -151,23 +145,13 @@ public class GitRiver extends AbstractRiverComponent implements River {
                 }
 
                 try {
-                    logger.debug("Git river is going to sleep for {} ms", updateRate);
-                    Thread.sleep(updateRate);
+                    logger.debug("Git river is going to sleep for {} ms", context.getUpdateRate());
+                    Thread.sleep(context.getUpdateRate());
                 } catch (InterruptedException e) {
                     // we shamefully swallow the interrupted exception
                     logger.warn("Git river interrupted");
                 }
             }
-        }
-
-        private Optional<Pattern> compilePattern(String regex) {
-            Optional<Pattern> issuePattern = Optional.absent();
-            try {
-                issuePattern = Optional.of(Pattern.compile(regex));
-            } catch (Throwable e) {
-                logger.warn("Git river exception occurred when parsing regex |{}|", issuePattern, e);
-            }
-            return issuePattern;
         }
 
     }

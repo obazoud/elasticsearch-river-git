@@ -10,6 +10,8 @@ import com.bazoud.elasticsearch.river.git.GitRiverModule;
  * @author Olivier Bazoud
  */
 public class GitRiverPlugin extends AbstractPlugin {
+    public static final String RIVER_TYPE = "git";
+
     @Override
     public String name() {
         return "git-river";
@@ -22,7 +24,7 @@ public class GitRiverPlugin extends AbstractPlugin {
 
     @Override public void processModule(Module module) {
         if (module instanceof RiversModule) {
-            ((RiversModule) module).registerRiver("git", GitRiverModule.class);
+            ((RiversModule) module).registerRiver(RIVER_TYPE, GitRiverModule.class);
         }
     }
 }

@@ -27,6 +27,7 @@ public class FunctionFlow<C> {
     public void apply(C context) {
         logger.info("Applying {} functions...", functions.size());
         Stopwatch stopwatch = new Stopwatch();
+        Stopwatch globalStopwatch = new Stopwatch().start();
         for (Function<C, C> function : functions) {
             logger.info("Starting {} ...", function.getClass().getName());
             stopwatch.reset().start();
@@ -34,7 +35,8 @@ public class FunctionFlow<C> {
             stopwatch.stop();
             logger.info("{} done. Tooks {} ms.", function.getClass().getName(), stopwatch.elapsed(MILLISECONDS));
         }
-        logger.info("Apply done.");
+        globalStopwatch.stop();
+        logger.info("Apply done. Tooks {} ms.", globalStopwatch.elapsed(MILLISECONDS));
     }
 
     public static <C> FunctionFlowBuilder flow() {

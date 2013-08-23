@@ -7,6 +7,7 @@ import org.elasticsearch.common.logging.Loggers;
 
 import com.bazoud.elasticsearch.river.git.beans.Context;
 import com.google.common.base.Predicate;
+import com.google.common.base.Throwables;
 
 /**
  * @author Olivier Bazoud
@@ -23,11 +24,11 @@ public class FetchOrCloneRepositoryPredicate implements Predicate<Context> {
                 .findGitDir()
                 .setMustExist(false)
                 .build();
-
             return repository.getObjectDatabase().exists();
         } catch(Throwable e) {
             logger.error(this.getClass().getName(), e);
-            throw new RuntimeException(e);
+            Throwables.propagate(e);
+            return false;
         }
     }
 

@@ -25,6 +25,7 @@ import com.github.tlrx.elasticsearch.test.annotations.ElasticsearchIndex;
 import com.github.tlrx.elasticsearch.test.annotations.ElasticsearchNode;
 import com.github.tlrx.elasticsearch.test.support.junit.runners.ElasticsearchRunner;
 
+import static com.bazoud.elasticsearch.plugin.river.git.GitRiverPlugin.RIVER_TYPE;
 import static java.lang.Thread.currentThread;
 import static java.lang.Thread.sleep;
 import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
@@ -67,7 +68,7 @@ public class GitRiverTest {
 
         XContentBuilder builder = jsonBuilder()
             .startObject()
-            .field("type", GitRiver.TYPE_NAME)
+            .field("type", RIVER_TYPE)
             .field("git",json)
             .endObject();
 

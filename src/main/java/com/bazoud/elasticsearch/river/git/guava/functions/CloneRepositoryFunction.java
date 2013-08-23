@@ -11,6 +11,7 @@ import org.elasticsearch.common.logging.Loggers;
 import com.bazoud.elasticsearch.river.git.beans.Context;
 import com.bazoud.elasticsearch.river.git.jgit.LoggingProgressMonitor;
 import com.google.common.base.Function;
+import com.google.common.base.Throwables;
 
 import static org.eclipse.jgit.lib.Constants.R_HEADS;
 
@@ -40,6 +41,7 @@ public class CloneRepositoryFunction implements Function<Context, Context> {
             logger.info("Found {} refs to process.", refs.size());
         } catch(Throwable e) {
             logger.error(this.getClass().getName(), e);
+            Throwables.propagate(e);
         }
         return context;
     }

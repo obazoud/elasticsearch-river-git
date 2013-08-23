@@ -24,6 +24,7 @@ import com.bazoud.elasticsearch.river.git.beans.Parent;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
+import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Ordering;
 
@@ -50,6 +51,7 @@ public class CommitIndexFunction implements Function<Context, Context> {
                                 return walk.parseCommit(ref.getObjectId());
                             } catch (Throwable e) {
                                 logger.error(this.getClass().getName(), e);
+                                Throwables.propagate(e);
                                 return null;
                             }
                         }
@@ -64,13 +66,14 @@ public class CommitIndexFunction implements Function<Context, Context> {
                     @Override
                     public RevCommit apply(RevCommit commit) {
                         try {
-                            bulk.add(indexRequest(context.getIndexName())
+                            bulk.add(indexRequest(context.getRiverName())
                                 .type("commit")
                                 .id(commit.getId().name())
                                 .source(toJson(toCommit(context, walk, commit))));
                             return commit;
                         } catch (Throwable e) {
                             logger.error(this.getClass().getName(), e);
+                            Throwables.propagate(e);
                             return null;
                         }
                     }
@@ -89,6 +92,7 @@ public class CommitIndexFunction implements Function<Context, Context> {
             }
         } catch(Throwable e) {
             logger.error(this.getClass().getName(), e);
+            Throwables.propagate(e);
         }
 
         return context;

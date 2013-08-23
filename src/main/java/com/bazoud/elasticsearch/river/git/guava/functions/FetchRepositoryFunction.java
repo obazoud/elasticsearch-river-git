@@ -16,6 +16,7 @@ import com.bazoud.elasticsearch.river.git.jgit.LoggingProgressMonitor;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
+import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 
 import static org.eclipse.jgit.lib.RefUpdate.Result.NO_CHANGE;
@@ -61,6 +62,7 @@ public class FetchRepositoryFunction implements Function<Context, Context> {
                             return repository.getRef(input.getLocalName());
                         } catch(Throwable e) {
                             logger.error(this.getClass().getName(), e);
+                            Throwables.propagate(e);
                             return null;
                         }
                     }
@@ -71,6 +73,7 @@ public class FetchRepositoryFunction implements Function<Context, Context> {
             logger.info("Found {} refs to process.", refs.size());
         } catch(Throwable e) {
             logger.error(this.getClass().getName(), e);
+            Throwables.propagate(e);
         }
 
         return context;

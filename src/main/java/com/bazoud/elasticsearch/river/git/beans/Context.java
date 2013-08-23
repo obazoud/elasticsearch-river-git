@@ -16,16 +16,21 @@ import lombok.Data;
  * @author Olivier Bazoud
  */
 @Data
-@Builder
 public class Context {
     private String name;
     private String uri;
     private File projectPath;
     private Repository repository;
-    private String workingDir;
+    private String workingDir =
+        System.getProperty("user.home") + File.separator + ".elasticsearch-river-git";
     private Collection<Ref> refs;
     private Client client;
-    private String indexName;
-    private Optional<Pattern> issuePattern;
+    private Optional<Pattern> issuePattern = Optional.absent();
+    private String issueRegex;
     private boolean indexingDiff;
+    // 15 minutes by default
+    private int updateRate = 15 * 60 * 1000;
+    private String type = "git";
+    private String riverName;
+    private String riverIndexName;
 }
