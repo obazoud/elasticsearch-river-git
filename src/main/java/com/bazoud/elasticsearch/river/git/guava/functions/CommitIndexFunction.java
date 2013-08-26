@@ -17,7 +17,7 @@ import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 
-import com.bazoud.elasticsearch.river.git.beans.Commit;
+import com.bazoud.elasticsearch.river.git.beans.IndexCommit;
 import com.bazoud.elasticsearch.river.git.beans.Context;
 import com.bazoud.elasticsearch.river.git.beans.Identity;
 import com.bazoud.elasticsearch.river.git.beans.Parent;
@@ -28,6 +28,7 @@ import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Ordering;
 
+import static com.bazoud.elasticsearch.river.git.json.Json.toJson;
 import static org.elasticsearch.client.Requests.indexRequest;
 
 /**
@@ -62,14 +63,26 @@ public class CommitIndexFunction implements Function<Context, Context> {
             final BulkRequestBuilder bulk = context.getClient().prepareBulk();
             FluentIterable
                 .from(walk)
-                .transform(new Function<RevCommit, RevCommit>() {
+                .transform(new Function<RevCommit, IndexCommit>() {
                     @Override
-                    public RevCommit apply(RevCommit commit) {
+                    public IndexCommit apply(RevCommit commit) {
+                        try {
+                            return toCommit(context, walk, commit);
+                        } catch (Throwable e) {
+                            logger.error(this.getClass().getName(), e);
+                            Throwables.propagate(e);
+                            return null;
+                        }
+                    }
+                })
+                .transform(new Function<IndexCommit, IndexCommit>() {
+                    @Override
+                    public IndexCommit apply(IndexCommit commit) {
                         try {
                             bulk.add(indexRequest(context.getRiverName())
                                 .type("commit")
-                                .id(commit.getId().name())
-                                .source(toJson(toCommit(context, walk, commit))));
+                                .id(commit.getId())
+                                .source(toJson(commit)));
                             return commit;
                         } catch (Throwable e) {
                             logger.error(this.getClass().getName(), e);
@@ -98,9 +111,10 @@ public class CommitIndexFunction implements Function<Context, Context> {
         return context;
     }
 
-    private static Commit toCommit(Context context, RevWalk walk, RevCommit revCommit) throws Exception {
-        return Commit.commit()
-            .id(revCommit.getId().name())
+    private static IndexCommit toCommit(Context context, RevWalk walk, RevCommit revCommit) throws Exception {
+        return IndexCommit.indexCommit()
+            .id(String.format("commit|%s|%s", context.getName(), revCommit.getId().name()))
+            .sha1(revCommit.getId().name())
             .project(context.getName())
             .author(
                 Identity.identity()
@@ -175,9 +189,4 @@ public class CommitIndexFunction implements Function<Context, Context> {
         return Ordering.natural().sortedCopy(issues);
     }
 
-    private static String toJson(Commit commit) throws JsonProcessingException {
-        ObjectMapper mapper = new ObjectMapper();
-        String json = mapper.writeValueAsString(commit);
-        return json;
-    }
 }

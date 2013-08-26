@@ -38,7 +38,7 @@ $ curl -XPUT 'localhost:9200/git/' -d '{}'
 
 We create the river with the following properties :
 
-* Project name : obazoud-elasticsearch
+* Project name (it is supposed to be unique): obazoud-elasticsearch
 * Git uri: git://github.com/obazoud/elasticsearch.git
 
 <pre>
@@ -46,7 +46,7 @@ $ curl -XPUT 'localhost:9200/_river/git/_meta' -d '{
   "type": "git",
   "git": {
    "name": "obazoud-elasticsearch",
-   "uri": "git://github.com/obazoud/elasticsearch.git",
+   "uri": "git://github.com/obazoud/elasticsearch-river-git.git",
    "issue_regex": "#(\\d*)",
    "indexing_diff": false,
    "update_rate": 1800000

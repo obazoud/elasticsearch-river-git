@@ -11,8 +11,9 @@ import lombok.Data;
  */
 @Data
 @Builder
-public class Commit {
+public class IndexCommit {
     private String id;
+    private String sha1;
     private String project;
     private Identity author;
     private Identity committer;

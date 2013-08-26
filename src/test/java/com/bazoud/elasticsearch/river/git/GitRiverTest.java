@@ -86,7 +86,7 @@ public class GitRiverTest {
     public void test20Searching() {
         // Wait for the indexing to take place.
         try {
-            sleep(8000L);
+            sleep(12000L);
         } catch (InterruptedException e) {
             currentThread().interrupt();
         }
