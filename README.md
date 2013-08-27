@@ -9,7 +9,7 @@ Welcome to the Git River Plugin for ["Elasticsearch"](http://www.elasticsearch.o
     <th>Git River Plugin</th><th>ElasticSearch</th>
   </tr>
   <tr>
-    <td>master (0.0.1)</td><td>master (0.90.3)</td>
+    <td>master (0.0.x)</td><td>master (0.90.3)</td>
   </tr>
 </table>
 
