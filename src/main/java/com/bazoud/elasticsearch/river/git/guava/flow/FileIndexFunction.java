@@ -4,13 +4,11 @@ import java.io.File;
 import java.io.IOException;
 
 import org.eclipse.jgit.lib.ObjectId;
-import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 
@@ -23,6 +21,7 @@ import com.google.common.collect.FluentIterable;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 
+import static com.bazoud.elasticsearch.river.git.es.Bulk.execute;
 import static com.bazoud.elasticsearch.river.git.json.Json.toJson;
 import static org.elasticsearch.client.Requests.indexRequest;
 
@@ -121,16 +120,4 @@ public class FileIndexFunction implements Function<Context, Context> {
             .build();
     }
 
-    private void execute(BulkRequestBuilder bulk) {
-        logger.info("Executing bulk {} actions", bulk.numberOfActions());
-        if (bulk.numberOfActions() > 0) {
-            BulkResponse response = bulk.execute().actionGet();
-            logger.info("Bulk actions tooks {} ms", response.getTookInMillis());
-            if (response.hasFailures()) {
-                logger.warn("failed to execute bulk: {}", response.buildFailureMessage());
-            }
-        } else {
-            logger.info("Sorry nothing to do");
-        }
-    }
 }

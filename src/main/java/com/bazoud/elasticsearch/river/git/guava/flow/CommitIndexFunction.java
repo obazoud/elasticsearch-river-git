@@ -14,6 +14,7 @@ import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 
+import static com.bazoud.elasticsearch.river.git.es.Bulk.execute;
 import static com.bazoud.elasticsearch.river.git.json.Json.toJson;
 import static org.elasticsearch.client.Requests.indexRequest;
 
@@ -67,19 +68,5 @@ public class CommitIndexFunction implements Function<Context, Context> {
 
         return context;
     }
-
-    private void execute(BulkRequestBuilder bulk) {
-        logger.info("Executing bulk {} actions", bulk.numberOfActions());
-        if (bulk.numberOfActions() > 0) {
-            BulkResponse response = bulk.execute().actionGet();
-            logger.info("Bulk actions tooks {} ms", response.getTookInMillis());
-            if (response.hasFailures()) {
-                logger.warn("failed to execute bulk: {}", response.buildFailureMessage());
-            }
-        } else {
-            logger.info("Sorry nothing to do");
-        }
-    }
-
 
 }
