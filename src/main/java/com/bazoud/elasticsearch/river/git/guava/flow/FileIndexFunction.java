@@ -1,19 +1,14 @@
-package com.bazoud.elasticsearch.river.git.guava.functions;
+package com.bazoud.elasticsearch.river.git.guava.flow;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 
-import org.eclipse.jgit.dircache.DirCache;
-import org.eclipse.jgit.dircache.DirCacheIterator;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.eclipse.jgit.treewalk.TreeWalk;
-import org.eclipse.jgit.treewalk.filter.PathFilter;
-import org.eclipse.jgit.util.FS;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.common.logging.ESLogger;
@@ -21,6 +16,7 @@ import org.elasticsearch.common.logging.Loggers;
 
 import com.bazoud.elasticsearch.river.git.beans.Context;
 import com.bazoud.elasticsearch.river.git.beans.IndexFile;
+import com.bazoud.elasticsearch.river.git.guava.functions.RefToRevCommit;
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
@@ -34,6 +30,7 @@ import static org.elasticsearch.client.Requests.indexRequest;
  * @author Olivier Bazoud
  */
 public class FileIndexFunction implements Function<Context, Context> {
+    public static final String TYPE_FILE = "file";
     private static ESLogger logger = Loggers.getLogger(FileIndexFunction.class);
 
     @Override
@@ -44,12 +41,7 @@ public class FileIndexFunction implements Function<Context, Context> {
             walk.markStart(
                 FluentIterable
                     .from(context.getRefs())
-                    .transform(new Function<Ref, RevCommit>() {
-                        @Override
-                        public RevCommit apply(Ref ref) {
-                            return toCommit(walk, ref);
-                        }
-                    })
+                    .transform(new RefToRevCommit(walk))
                     .toList()
             );
 
@@ -91,7 +83,7 @@ public class FileIndexFunction implements Function<Context, Context> {
                     public IndexFile apply(IndexFile indexFile) {
                         try {
                             bulk.add(indexRequest(context.getRiverName())
-                                .type("file")
+                                .type(TYPE_FILE)
                                 .id(indexFile.getId())
                                 .source(toJson(indexFile)));
                             return indexFile;
@@ -136,16 +128,6 @@ public class FileIndexFunction implements Function<Context, Context> {
             .extension(Files.getFileExtension(file.getAbsolutePath()))
             .content(new String(context.getRepository().open(objectId).getBytes()))
             .build();
-    }
-
-    private RevCommit toCommit(RevWalk walk, Ref ref) {
-        try {
-            return walk.parseCommit(ref.getObjectId());
-        } catch (Throwable e) {
-            logger.error(this.getClass().getName(), e);
-            Throwables.propagate(e);
-            return null;
-        }
     }
 
 }

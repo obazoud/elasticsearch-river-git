@@ -1,4 +1,4 @@
-package com.bazoud.elasticsearch.river.git.guava.functions;
+package com.bazoud.elasticsearch.river.git.guava.flow;
 
 import java.util.Collection;
 
@@ -45,7 +45,6 @@ public class FetchRepositoryFunction implements Function<Context, Context> {
             FetchResult fetchResult = git.fetch()
                 .setProgressMonitor(new LoggingProgressMonitor(logger))
                 .call();
-
 
             Collection<Ref> refs = FluentIterable
                 .from(fetchResult.getTrackingRefUpdates())

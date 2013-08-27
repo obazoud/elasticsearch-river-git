@@ -1,4 +1,4 @@
-package com.bazoud.elasticsearch.river.git.guava.functions;
+package com.bazoud.elasticsearch.river.git.guava.flow;
 
 import java.io.File;
 

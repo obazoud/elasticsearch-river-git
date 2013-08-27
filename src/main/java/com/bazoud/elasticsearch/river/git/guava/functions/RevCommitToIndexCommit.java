@@ -9,109 +9,46 @@ import java.util.regex.Matcher;
 
 import org.eclipse.jgit.diff.DiffFormatter;
 import org.eclipse.jgit.diff.RawTextComparator;
-import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevWalk;
-import org.elasticsearch.action.bulk.BulkRequestBuilder;
-import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 
-import com.bazoud.elasticsearch.river.git.beans.IndexCommit;
 import com.bazoud.elasticsearch.river.git.beans.Context;
 import com.bazoud.elasticsearch.river.git.beans.Identity;
+import com.bazoud.elasticsearch.river.git.beans.IndexCommit;
 import com.bazoud.elasticsearch.river.git.beans.Parent;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Ordering;
 
-import static com.bazoud.elasticsearch.river.git.json.Json.toJson;
-import static org.elasticsearch.client.Requests.indexRequest;
-
 /**
  * @author Olivier Bazoud
  */
-public class CommitIndexFunction implements Function<Context, Context> {
-    private static ESLogger logger = Loggers.getLogger(CommitIndexFunction.class);
+public class RevCommitToIndexCommit implements Function<RevCommit, IndexCommit> {
+    private static ESLogger logger = Loggers.getLogger(RevCommitToIndexCommit.class);
 
-    @Override
-    public Context apply(final Context context) {
-        try {
-            final RevWalk walk = new RevWalk(context.getRepository());
+    private RevWalk walk;
+    private Context context;
 
-            walk.markStart(
-                FluentIterable
-                    .from(context.getRefs())
-                    .transform(new Function<Ref, RevCommit>() {
-                        @Override
-                        public RevCommit apply(Ref ref) {
-                            try {
-                                return walk.parseCommit(ref.getObjectId());
-                            } catch (Throwable e) {
-                                logger.error(this.getClass().getName(), e);
-                                Throwables.propagate(e);
-                                return null;
-                            }
-                        }
-                    })
-                    .toList()
-            );
-
-            final BulkRequestBuilder bulk = context.getClient().prepareBulk();
-            FluentIterable
-                .from(walk)
-                .transform(new Function<RevCommit, IndexCommit>() {
-                    @Override
-                    public IndexCommit apply(RevCommit commit) {
-                        try {
-                            return toCommit(context, walk, commit);
-                        } catch (Throwable e) {
-                            logger.error(this.getClass().getName(), e);
-                            Throwables.propagate(e);
-                            return null;
-                        }
-                    }
-                })
-                .transform(new Function<IndexCommit, IndexCommit>() {
-                    @Override
-                    public IndexCommit apply(IndexCommit commit) {
-                        try {
-                            bulk.add(indexRequest(context.getRiverName())
-                                .type("commit")
-                                .id(commit.getId())
-                                .source(toJson(commit)));
-                            return commit;
-                        } catch (Throwable e) {
-                            logger.error(this.getClass().getName(), e);
-                            Throwables.propagate(e);
-                            return null;
-                        }
-                    }
-                })
-                .toList();
-
-            logger.info("Executing bulk {} actions", bulk.numberOfActions());
-            if (bulk.numberOfActions() > 0) {
-                BulkResponse response = bulk.execute().actionGet();
-                logger.info("Bulk actions tooks {} ms", response.getTookInMillis());
-                if (response.hasFailures()) {
-                    logger.warn("failed to execute bulk: {}", response.buildFailureMessage());
-                }
-            } else {
-                logger.info("Sorry nothing to do");
-            }
-        } catch(Throwable e) {
-            logger.error(this.getClass().getName(), e);
-            Throwables.propagate(e);
-        }
-
-        return context;
+    public RevCommitToIndexCommit(Context context, RevWalk walk) {
+        this.context = context;
+        this.walk = walk;
     }
 
-    private static IndexCommit toCommit(Context context, RevWalk walk, RevCommit revCommit) throws Exception {
+    @Override
+    public IndexCommit apply(RevCommit commit) {
+        try {
+            return toCommit(context, walk, commit);
+        } catch (Throwable e) {
+            logger.error(this.getClass().getName(), e);
+            Throwables.propagate(e);
+            return null;
+        }
+    }
+
+    private IndexCommit toCommit(Context context, RevWalk walk, RevCommit revCommit) throws Exception {
         return IndexCommit.indexCommit()
             .id(String.format("commit|%s|%s", context.getName(), revCommit.getId().name()))
             .sha1(revCommit.getId().name())
@@ -137,7 +74,7 @@ public class CommitIndexFunction implements Function<Context, Context> {
             .subject(revCommit.getShortMessage())
             .messsage(revCommit.getFullMessage())
             .encoding(revCommit.getEncoding().name())
-            .issues(parseMessage(context, revCommit.getFullMessage()))
+            .issues(parseIssues(context, revCommit.getFullMessage()))
             .parents(
                 FluentIterable
                     .from(Arrays.asList(revCommit.getParents()))
@@ -160,7 +97,7 @@ public class CommitIndexFunction implements Function<Context, Context> {
             .build();
     }
 
-    private static String parseDiff(Context context, RevWalk walk, RevCommit revCommit) throws Exception {
+    private String parseDiff(Context context, RevWalk walk, RevCommit revCommit) throws Exception {
         if (context.isIndexingDiff() && revCommit.getParentCount() > 0) {
             RevCommit parentCommit = walk.parseCommit(revCommit.getParent(0).getId());
             ByteArrayOutputStream diffOutputStream = new ByteArrayOutputStream();
@@ -175,7 +112,7 @@ public class CommitIndexFunction implements Function<Context, Context> {
         }
     }
 
-    private static List<String> parseMessage(Context context, String message) {
+    private List<String> parseIssues(Context context, String message) {
         if (!context.getIssuePattern().isPresent()) {
             return Collections.emptyList();
         }
@@ -188,5 +125,4 @@ public class CommitIndexFunction implements Function<Context, Context> {
 
         return Ordering.natural().sortedCopy(issues);
     }
-
 }

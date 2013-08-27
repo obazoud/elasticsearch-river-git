@@ -1,8 +1,6 @@
 package com.bazoud.elasticsearch.river.git;
 
-import java.io.File;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -12,7 +10,6 @@ import org.elasticsearch.client.Client;
 import org.elasticsearch.cluster.block.ClusterBlockException;
 import org.elasticsearch.common.inject.Inject;
 import org.elasticsearch.common.util.concurrent.EsExecutors;
-import org.elasticsearch.common.xcontent.support.XContentMapValues;
 import org.elasticsearch.indices.IndexAlreadyExistsException;
 import org.elasticsearch.river.AbstractRiverComponent;
 import org.elasticsearch.river.River;
@@ -22,21 +19,9 @@ import org.elasticsearch.river.RiverSettings;
 import org.elasticsearch.threadpool.ThreadPool;
 
 import com.bazoud.elasticsearch.river.git.beans.Context;
-import com.bazoud.elasticsearch.river.git.guava.FunctionFlow;
-import com.bazoud.elasticsearch.river.git.guava.PredicateFunction;
-import com.bazoud.elasticsearch.river.git.guava.functions.CloneRepositoryFunction;
-import com.bazoud.elasticsearch.river.git.guava.functions.CommitIndexFunction;
-import com.bazoud.elasticsearch.river.git.guava.functions.FetchRepositoryFunction;
-import com.bazoud.elasticsearch.river.git.guava.functions.InitializeFunction;
-import com.bazoud.elasticsearch.river.git.guava.predicates.FetchOrCloneRepositoryPredicate;
-import com.fasterxml.jackson.databind.util.BeanUtil;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Function;
-import com.google.common.base.Functions;
 import com.google.common.base.Optional;
-import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableMap;
-import com.google.common.collect.Maps;
 
 import static com.bazoud.elasticsearch.river.git.guava.Maps.transformKeys;
 import static com.google.common.base.Preconditions.checkNotNull;
