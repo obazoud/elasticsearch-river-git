@@ -54,6 +54,10 @@ $ curl -XPUT 'localhost:9200/_river/git/_meta' -d '{
 }'
 </pre>
 
+### Build
+
+[![Build Status](https://buildhive.cloudbees.com/job/obazoud/job/elasticsearch-river-git/badge/icon)](https://buildhive.cloudbees.com/job/obazoud/job/elasticsearch-river-git/)
+
 ### LICENSE
 
 ```
