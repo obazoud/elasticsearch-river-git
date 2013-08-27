@@ -8,6 +8,7 @@ import com.bazoud.elasticsearch.river.git.guava.flow.CommitIndexFunction;
 import com.bazoud.elasticsearch.river.git.guava.flow.FetchRepositoryFunction;
 import com.bazoud.elasticsearch.river.git.guava.flow.FileIndexFunction;
 import com.bazoud.elasticsearch.river.git.guava.flow.InitializeFunction;
+import com.bazoud.elasticsearch.river.git.guava.flow.TagIndexFunction;
 import com.bazoud.elasticsearch.river.git.guava.predicates.FetchOrCloneRepositoryPredicate;
 
 /**
@@ -25,6 +26,7 @@ public class FunctionFlowFactory {
                 )
             )
             .add(new CommitIndexFunction())
+            .add(new TagIndexFunction())
             .add(new FileIndexFunction())
             .build();
     }

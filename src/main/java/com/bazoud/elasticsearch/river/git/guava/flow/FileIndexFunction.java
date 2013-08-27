@@ -96,16 +96,7 @@ public class FileIndexFunction implements Function<Context, Context> {
                 })
                 .toList();
 
-            logger.info("Executing bulk {} actions", bulk.numberOfActions());
-            if (bulk.numberOfActions() > 0) {
-                BulkResponse response = bulk.execute().actionGet();
-                logger.info("Bulk actions tooks {} ms", response.getTookInMillis());
-                if (response.hasFailures()) {
-                    logger.warn("failed to execute bulk: {}", response.buildFailureMessage());
-                }
-            } else {
-                logger.info("Sorry nothing to do");
-            }
+            execute(bulk);
 
         } catch (Throwable e) {
             logger.error(this.getClass().getName(), e);
@@ -117,7 +108,7 @@ public class FileIndexFunction implements Function<Context, Context> {
 
     private IndexFile toIndexFile(Context context, TreeWalk treeWalk, RevCommit revCommit, ObjectId objectId) throws IOException {
         File file = new File(treeWalk.getPathString());
-        String id = String.format("file|%s|%s|%s", context.getName(), revCommit.name(), file.getPath());
+        String id = String.format("%s|%s|%s|%s", TYPE_FILE, context.getName(), revCommit.name(), file.getPath());
         logger.debug("Indexing file with id {}", id);
         return IndexFile.indexFile()
             .id(id)
@@ -130,4 +121,16 @@ public class FileIndexFunction implements Function<Context, Context> {
             .build();
     }
 
+    private void execute(BulkRequestBuilder bulk) {
+        logger.info("Executing bulk {} actions", bulk.numberOfActions());
+        if (bulk.numberOfActions() > 0) {
+            BulkResponse response = bulk.execute().actionGet();
+            logger.info("Bulk actions tooks {} ms", response.getTookInMillis());
+            if (response.hasFailures()) {
+                logger.warn("failed to execute bulk: {}", response.buildFailureMessage());
+            }
+        } else {
+            logger.info("Sorry nothing to do");
+        }
+    }
 }

@@ -1,15 +1,18 @@
 package com.bazoud.elasticsearch.river.git.guava.flow;
 
+import java.util.Map;
+
+import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.elasticsearch.action.bulk.BulkRequestBuilder;
 import org.elasticsearch.action.bulk.BulkResponse;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 
-import com.bazoud.elasticsearch.river.git.beans.IndexCommit;
 import com.bazoud.elasticsearch.river.git.beans.Context;
-import com.bazoud.elasticsearch.river.git.guava.functions.RefToRevCommit;
-import com.bazoud.elasticsearch.river.git.guava.functions.RevCommitToIndexCommit;
+import com.bazoud.elasticsearch.river.git.beans.IndexCommit;
+import com.bazoud.elasticsearch.river.git.beans.IndexTag;
+import com.bazoud.elasticsearch.river.git.guava.functions.TagToIndexTag;
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
@@ -20,35 +23,27 @@ import static org.elasticsearch.client.Requests.indexRequest;
 /**
  * @author Olivier Bazoud
  */
-public class CommitIndexFunction implements Function<Context, Context> {
-    public static final String TYPE_COMMIT = "commit";
-    private static ESLogger logger = Loggers.getLogger(CommitIndexFunction.class);
+public class TagIndexFunction implements Function<Context, Context> {
+    private static ESLogger logger = Loggers.getLogger(TagIndexFunction.class);
+    public static final String TYPE_TAG = "tag";
 
     @Override
     public Context apply(final Context context) {
         try {
             final RevWalk walk = new RevWalk(context.getRepository());
-
-            walk.markStart(
-                FluentIterable
-                    .from(context.getRefs())
-                    .transform(new RefToRevCommit(walk))
-                    .toList()
-            );
-
             final BulkRequestBuilder bulk = context.getClient().prepareBulk();
             FluentIterable
-                .from(walk)
-                .transform(new RevCommitToIndexCommit(context, walk))
-                .transform(new Function<IndexCommit, IndexCommit>() {
+                .from(context.getRepository().getTags().entrySet())
+                .transform(new TagToIndexTag(context, walk))
+                .transform(new Function<IndexTag, IndexTag>() {
                     @Override
-                    public IndexCommit apply(IndexCommit commit) {
+                    public IndexTag apply(IndexTag tag) {
                         try {
                             bulk.add(indexRequest(context.getRiverName())
-                                .type(TYPE_COMMIT)
-                                .id(commit.getId())
-                                .source(toJson(commit)));
-                            return commit;
+                                .type(TYPE_TAG)
+                                .id(tag.getId())
+                                .source(toJson(tag)));
+                            return tag;
                         } catch (Throwable e) {
                             logger.error(this.getClass().getName(), e);
                             Throwables.propagate(e);
@@ -80,6 +75,4 @@ public class CommitIndexFunction implements Function<Context, Context> {
             logger.info("Sorry nothing to do");
         }
     }
-
-
 }
