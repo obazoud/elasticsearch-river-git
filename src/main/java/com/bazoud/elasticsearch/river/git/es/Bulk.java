@@ -8,8 +8,11 @@ import org.elasticsearch.common.logging.Loggers;
 /**
  * @author Olivier Bazoud
  */
-public class Bulk {
+public final class Bulk {
     private static ESLogger logger = Loggers.getLogger(Bulk.class);
+
+    private Bulk() {
+    }
 
     public static void execute(BulkRequestBuilder bulk) {
         logger.info("Executing bulk {} actions", bulk.numberOfActions());

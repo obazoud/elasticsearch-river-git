@@ -22,7 +22,8 @@ public class GitRiverPlugin extends AbstractPlugin {
         return "Git River Plugin";
     }
 
-    @Override public void processModule(Module module) {
+    @Override
+    public void processModule(Module module) {
         if (module instanceof RiversModule) {
             ((RiversModule) module).registerRiver(RIVER_TYPE, GitRiverModule.class);
         }

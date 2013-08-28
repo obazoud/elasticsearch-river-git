@@ -1,4 +1,4 @@
-package com.bazoud.elasticsearch.river.git.guava.flow;
+package com.bazoud.elasticsearch.river.git.flow;
 
 import java.util.Collection;
 
@@ -32,7 +32,8 @@ public class FetchRepositoryFunction implements Function<Context, Context> {
         try {
             final Repository repository = new FileRepositoryBuilder()
                 .setGitDir(context.getProjectPath())
-                .readEnvironment() // scan environment GIT_* variables
+                    // scan environment GIT_* variables
+                .readEnvironment()
                 .findGitDir()
                 .setMustExist(true)
                 .build();
@@ -59,7 +60,7 @@ public class FetchRepositoryFunction implements Function<Context, Context> {
                     public Ref apply(TrackingRefUpdate input) {
                         try {
                             return repository.getRef(input.getLocalName());
-                        } catch(Throwable e) {
+                        } catch (Throwable e) {
                             logger.error(this.getClass().getName(), e);
                             Throwables.propagate(e);
                             return null;
@@ -70,7 +71,7 @@ public class FetchRepositoryFunction implements Function<Context, Context> {
 
             context.setRefs(refs);
             logger.info("Found {} refs to process.", refs.size());
-        } catch(Throwable e) {
+        } catch (Throwable e) {
             logger.error(this.getClass().getName(), e);
             Throwables.propagate(e);
         }

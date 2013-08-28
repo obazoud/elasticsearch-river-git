@@ -1,4 +1,4 @@
-package com.bazoud.elasticsearch.river.git.guava.functions;
+package com.bazoud.elasticsearch.river.git.flow.functions;
 
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
@@ -105,7 +105,7 @@ public class RevCommitToIndexCommit implements Function<RevCommit, IndexCommit> 
             diffFormatter.setRepository(context.getRepository());
             diffFormatter.setDiffComparator(RawTextComparator.DEFAULT);
             diffFormatter.setDetectRenames(true);
-            diffFormatter.format(parentCommit.getTree(),revCommit.getTree());
+            diffFormatter.format(parentCommit.getTree(), revCommit.getTree());
             return new String(diffOutputStream.toByteArray());
         } else {
             return null;
@@ -119,7 +119,7 @@ public class RevCommitToIndexCommit implements Function<RevCommit, IndexCommit> 
 
         Matcher matcher = context.getIssuePattern().get().matcher(message);
         List<String> issues = new ArrayList<String>();
-        while(matcher.find()) {
+        while (matcher.find()) {
             issues.add(matcher.group(1));
         }
 

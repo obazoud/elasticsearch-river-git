@@ -8,7 +8,8 @@ import lombok.Data;
  */
 @Data
 @Builder
-public class IndexFile {
+@SuppressWarnings("PMD.UnusedPrivateField")
+public class IndexFile implements Id {
     private String id;
     private String commit;
     private String project;

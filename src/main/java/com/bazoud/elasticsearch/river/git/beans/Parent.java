@@ -8,6 +8,7 @@ import lombok.Data;
  */
 @Data
 @Builder
+@SuppressWarnings("PMD.UnusedPrivateField")
 public class Parent {
     private String id;
 }

@@ -8,7 +8,8 @@ import lombok.Data;
  */
 @Data
 @Builder
-public class IndexTag {
+@SuppressWarnings("PMD.UnusedPrivateField")
+public class IndexTag implements Id {
     private String id;
     private String tag;
     private String ref;

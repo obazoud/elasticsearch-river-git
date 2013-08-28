@@ -11,6 +11,7 @@ import lombok.Data;
  */
 @Data
 @Builder
+@SuppressWarnings("PMD.UnusedPrivateField")
 public class Identity {
     private String name;
     private String emailAddress;

@@ -69,7 +69,7 @@ public class GitRiverTest {
         XContentBuilder builder = jsonBuilder()
             .startObject()
             .field("type", RIVER_TYPE)
-            .field("git",json)
+            .field("git", json)
             .endObject();
 
         IndexResponse indexResponse = client1.prepareIndex(RIVER_KEYWORD, "gitriver01", "_meta")
@@ -96,12 +96,12 @@ public class GitRiverTest {
             .execute()
             .actionGet();
 
-        for(SearchHit hit : searchResponse.getHits()) {
-            System.out.println("Search result index ["+hit.index()
-                +"] type ["+hit.type()
-                +"] id ["+hit.id()+"]"
+        for (SearchHit hit : searchResponse.getHits()) {
+            System.out.println("Search result index [" + hit.index()
+                + "] type [" + hit.type()
+                + "] id [" + hit.id() + "]"
             );
-            System.out.println("Search result source:"+hit.sourceAsString());
+            System.out.println("Search result source:" + hit.sourceAsString());
         }
 
         Assert.assertTrue("There should be at least a 'elasticsearch' mention in the repository",

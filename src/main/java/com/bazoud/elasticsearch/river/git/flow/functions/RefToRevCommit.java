@@ -1,4 +1,4 @@
-package com.bazoud.elasticsearch.river.git.guava.functions;
+package com.bazoud.elasticsearch.river.git.flow.functions;
 
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.revwalk.RevCommit;

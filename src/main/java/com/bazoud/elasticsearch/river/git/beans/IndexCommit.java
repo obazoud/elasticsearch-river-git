@@ -11,7 +11,8 @@ import lombok.Data;
  */
 @Data
 @Builder
-public class IndexCommit {
+@SuppressWarnings("PMD.UnusedPrivateField")
+public class IndexCommit implements Id {
     private String id;
     private String sha1;
     private String project;

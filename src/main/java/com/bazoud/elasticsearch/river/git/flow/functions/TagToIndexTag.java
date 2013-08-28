@@ -1,4 +1,4 @@
-package com.bazoud.elasticsearch.river.git.guava.functions;
+package com.bazoud.elasticsearch.river.git.flow.functions;
 
 import java.util.Map;
 
@@ -10,7 +10,7 @@ import org.elasticsearch.common.logging.Loggers;
 
 import com.bazoud.elasticsearch.river.git.beans.Context;
 import com.bazoud.elasticsearch.river.git.beans.IndexTag;
-import com.bazoud.elasticsearch.river.git.guava.flow.TagIndexFunction;
+import com.bazoud.elasticsearch.river.git.flow.TagIndexFunction;
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 

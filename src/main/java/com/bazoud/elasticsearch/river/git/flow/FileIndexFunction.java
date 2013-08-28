@@ -1,4 +1,4 @@
-package com.bazoud.elasticsearch.river.git.guava.flow;
+package com.bazoud.elasticsearch.river.git.flow;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,7 +14,8 @@ import org.elasticsearch.common.logging.Loggers;
 
 import com.bazoud.elasticsearch.river.git.beans.Context;
 import com.bazoud.elasticsearch.river.git.beans.IndexFile;
-import com.bazoud.elasticsearch.river.git.guava.functions.RefToRevCommit;
+import com.bazoud.elasticsearch.river.git.flow.functions.ObjectToJsonFunction;
+import com.bazoud.elasticsearch.river.git.flow.functions.RefToRevCommit;
 import com.google.common.base.Function;
 import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
@@ -22,15 +23,13 @@ import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
 
 import static com.bazoud.elasticsearch.river.git.es.Bulk.execute;
-import static com.bazoud.elasticsearch.river.git.json.Json.toJson;
-import static org.elasticsearch.client.Requests.indexRequest;
 
 /**
  * @author Olivier Bazoud
  */
 public class FileIndexFunction implements Function<Context, Context> {
-    public static final String TYPE_FILE = "file";
     private static ESLogger logger = Loggers.getLogger(FileIndexFunction.class);
+    public static final String TYPE_FILE = "file";
 
     @Override
     public Context apply(final Context context) {
@@ -77,22 +76,7 @@ public class FileIndexFunction implements Function<Context, Context> {
 
             FluentIterable
                 .from(files)
-                .transform(new Function<IndexFile, IndexFile>() {
-                    @Override
-                    public IndexFile apply(IndexFile indexFile) {
-                        try {
-                            bulk.add(indexRequest(context.getRiverName())
-                                .type(TYPE_FILE)
-                                .id(indexFile.getId())
-                                .source(toJson(indexFile)));
-                            return indexFile;
-                        } catch (Throwable e) {
-                            logger.error(this.getClass().getName(), e);
-                            Throwables.propagate(e);
-                            return indexFile;
-                        }
-                    }
-                })
+                .transform(new ObjectToJsonFunction(bulk, context.getRiverName(), TYPE_FILE))
                 .toList();
 
             execute(bulk);

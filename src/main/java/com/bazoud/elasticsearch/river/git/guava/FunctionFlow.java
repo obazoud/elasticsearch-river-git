@@ -44,7 +44,7 @@ public class FunctionFlow<C> {
     }
 
     public static class FunctionFlowBuilder<C> {
-        private List<Function<C,C>> functions = new ArrayList<Function<C,C>>();
+        private List<Function<C, C>> functions = new ArrayList<Function<C, C>>();
 
         public FunctionFlow build() {
             return new FunctionFlow<C>(this);

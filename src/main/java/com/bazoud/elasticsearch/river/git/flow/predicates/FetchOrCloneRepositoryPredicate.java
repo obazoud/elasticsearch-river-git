@@ -1,4 +1,4 @@
-package com.bazoud.elasticsearch.river.git.guava.predicates;
+package com.bazoud.elasticsearch.river.git.flow.predicates;
 
 import org.eclipse.jgit.lib.Repository;
 import org.eclipse.jgit.storage.file.FileRepositoryBuilder;
@@ -25,7 +25,7 @@ public class FetchOrCloneRepositoryPredicate implements Predicate<Context> {
                 .setMustExist(false)
                 .build();
             return repository.getObjectDatabase().exists();
-        } catch(Throwable e) {
+        } catch (Throwable e) {
             logger.error(this.getClass().getName(), e);
             Throwables.propagate(e);
             return false;

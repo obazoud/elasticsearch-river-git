@@ -1,4 +1,4 @@
-package com.bazoud.elasticsearch.river.git.guava.flow;
+package com.bazoud.elasticsearch.river.git.flow;
 
 import java.util.Collection;
 
@@ -39,7 +39,7 @@ public class CloneRepositoryFunction implements Function<Context, Context> {
             Collection<Ref> refs = repository.getRefDatabase().getRefs(R_HEADS).values();
             context.setRefs(refs);
             logger.info("Found {} refs to process.", refs.size());
-        } catch(Throwable e) {
+        } catch (Throwable e) {
             logger.error(this.getClass().getName(), e);
             Throwables.propagate(e);
         }

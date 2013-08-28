@@ -1,6 +1,7 @@
 package com.bazoud.elasticsearch.river.git;
 
 import java.lang.reflect.InvocationTargetException;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.regex.Pattern;
 
@@ -16,15 +17,12 @@ import org.elasticsearch.river.River;
 import org.elasticsearch.river.RiverIndexName;
 import org.elasticsearch.river.RiverName;
 import org.elasticsearch.river.RiverSettings;
-import org.elasticsearch.threadpool.ThreadPool;
 
 import com.bazoud.elasticsearch.river.git.beans.Context;
 import com.google.common.base.CaseFormat;
 import com.google.common.base.Function;
 import com.google.common.base.Optional;
-
-import static com.bazoud.elasticsearch.river.git.guava.Maps.transformKeys;
-import static com.google.common.base.Preconditions.checkNotNull;
+import com.google.common.collect.ImmutableMap;
 
 /**
  * @author Olivier Bazoud
@@ -39,7 +37,7 @@ public class GitRiver extends AbstractRiverComponent implements River {
     private Context context = new Context();
 
     @Inject
-    protected GitRiver(RiverName riverName, RiverSettings settings, @RiverIndexName String riverIndexName, Client client, ThreadPool threadPool) throws InvocationTargetException, IllegalAccessException {
+    protected GitRiver(RiverName riverName, RiverSettings settings, @RiverIndexName String riverIndexName, Client client) throws InvocationTargetException, IllegalAccessException {
         super(riverName, settings);
         this.client = client;
         logger.info("Creating Git river");
@@ -139,5 +137,16 @@ public class GitRiver extends AbstractRiverComponent implements River {
             }
         }
 
+    }
+
+    public static <K, V> ImmutableMap<K, V> transformKeys(
+        Map<K, V> map, Function<K, K> keyFunction) {
+        ImmutableMap.Builder<K, V> builder = ImmutableMap.builder();
+        Iterator<K> iterator = map.keySet().iterator();
+        while (iterator.hasNext()) {
+            K key = iterator.next();
+            builder.put(keyFunction.apply(key), map.get(key));
+        }
+        return builder.build();
     }
 }
