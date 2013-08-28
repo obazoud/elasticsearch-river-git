@@ -10,14 +10,14 @@ import org.elasticsearch.common.logging.Loggers;
 
 import com.bazoud.elasticsearch.river.git.beans.Context;
 import com.bazoud.elasticsearch.river.git.beans.IndexTag;
-import com.bazoud.elasticsearch.river.git.flow.TagIndexFunction;
-import com.google.common.base.Function;
-import com.google.common.base.Throwables;
+import com.bazoud.elasticsearch.river.git.guava.MyFunction;
+
+import static com.bazoud.elasticsearch.river.git.IndexedDocumentType.TAG;
 
 /**
  * @author Olivier Bazoud
  */
-public class TagToIndexTag implements Function<Map.Entry<String, Ref>, IndexTag> {
+public class TagToIndexTag extends MyFunction<Map.Entry<String, Ref>, IndexTag> {
     private static ESLogger logger = Loggers.getLogger(TagToIndexTag.class);
     private Context context;
     private final RevWalk walk;
@@ -28,21 +28,14 @@ public class TagToIndexTag implements Function<Map.Entry<String, Ref>, IndexTag>
     }
 
     @Override
-    public IndexTag apply(Map.Entry<String, Ref> tag) {
-        try {
-
-            RevCommit revCommit = walk.parseCommit(tag.getValue().getObjectId());
-            String id = String.format("%s|%s|%s", TagIndexFunction.TYPE_TAG, context.getName(), revCommit.name());
-            return IndexTag.indexTag()
-                .id(id)
-                .tag(tag.getKey())
-                .ref(tag.getValue().getName())
-                .sha1(revCommit.name())
-                .build();
-        } catch (Throwable e) {
-            logger.error(this.getClass().getName(), e);
-            Throwables.propagate(e);
-            return null;
-        }
+    public IndexTag doApply(Map.Entry<String, Ref> tag) throws Throwable {
+        RevCommit revCommit = walk.parseCommit(tag.getValue().getObjectId());
+        String id = String.format("%s|%s|%s", TAG.name().toLowerCase(), context.getName(), revCommit.name());
+        return IndexTag.indexTag()
+            .id(id)
+            .tag(tag.getKey())
+            .ref(tag.getValue().getName())
+            .sha1(revCommit.name())
+            .build();
     }
 }

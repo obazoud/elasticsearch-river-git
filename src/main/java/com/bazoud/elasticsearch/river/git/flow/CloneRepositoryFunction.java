@@ -9,40 +9,34 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 
 import com.bazoud.elasticsearch.river.git.beans.Context;
+import com.bazoud.elasticsearch.river.git.guava.MyFunction;
 import com.bazoud.elasticsearch.river.git.jgit.LoggingProgressMonitor;
-import com.google.common.base.Function;
-import com.google.common.base.Throwables;
 
 import static org.eclipse.jgit.lib.Constants.R_HEADS;
 
 /**
  * @author Olivier Bazoud
  */
-public class CloneRepositoryFunction implements Function<Context, Context> {
+public class CloneRepositoryFunction extends MyFunction<Context, Context> {
     private static ESLogger logger = Loggers.getLogger(CloneRepositoryFunction.class);
 
     @Override
-    public Context apply(Context context) {
-        try {
-            logger.info("Cloning the '{}' repository at path: '{}'", context.getName(), context.getProjectPath());
-            Git git = Git.cloneRepository()
-                .setBare(true)
-                .setNoCheckout(true)
-                .setCloneAllBranches(true)
-                .setDirectory(context.getProjectPath())
-                .setURI(context.getUri())
-                .setProgressMonitor(new LoggingProgressMonitor(logger))
-                .call();
-            Repository repository = git.getRepository();
-            context.setRepository(repository);
+    public Context doApply(Context context) throws Throwable {
+        logger.info("Cloning the '{}' repository at path: '{}'", context.getName(), context.getProjectPath());
+        Git git = Git.cloneRepository()
+            .setBare(true)
+            .setNoCheckout(true)
+            .setCloneAllBranches(true)
+            .setDirectory(context.getProjectPath())
+            .setURI(context.getUri())
+            .setProgressMonitor(new LoggingProgressMonitor(logger))
+            .call();
+        Repository repository = git.getRepository();
+        context.setRepository(repository);
 
-            Collection<Ref> refs = repository.getRefDatabase().getRefs(R_HEADS).values();
-            context.setRefs(refs);
-            logger.info("Found {} refs to process.", refs.size());
-        } catch (Throwable e) {
-            logger.error(this.getClass().getName(), e);
-            Throwables.propagate(e);
-        }
+        Collection<Ref> refs = repository.getRefDatabase().getRefs(R_HEADS).values();
+        context.setRefs(refs);
+        logger.info("Found {} refs to process.", refs.size());
         return context;
     }
 }

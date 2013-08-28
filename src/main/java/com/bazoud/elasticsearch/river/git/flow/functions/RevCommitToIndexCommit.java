@@ -18,15 +18,17 @@ import com.bazoud.elasticsearch.river.git.beans.Context;
 import com.bazoud.elasticsearch.river.git.beans.Identity;
 import com.bazoud.elasticsearch.river.git.beans.IndexCommit;
 import com.bazoud.elasticsearch.river.git.beans.Parent;
+import com.bazoud.elasticsearch.river.git.guava.MyFunction;
 import com.google.common.base.Function;
-import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 import com.google.common.collect.Ordering;
+
+import static com.bazoud.elasticsearch.river.git.IndexedDocumentType.COMMIT;
 
 /**
  * @author Olivier Bazoud
  */
-public class RevCommitToIndexCommit implements Function<RevCommit, IndexCommit> {
+public class RevCommitToIndexCommit extends MyFunction<RevCommit, IndexCommit> {
     private static ESLogger logger = Loggers.getLogger(RevCommitToIndexCommit.class);
 
     private RevWalk walk;
@@ -38,19 +40,9 @@ public class RevCommitToIndexCommit implements Function<RevCommit, IndexCommit> 
     }
 
     @Override
-    public IndexCommit apply(RevCommit commit) {
-        try {
-            return toCommit(context, walk, commit);
-        } catch (Throwable e) {
-            logger.error(this.getClass().getName(), e);
-            Throwables.propagate(e);
-            return null;
-        }
-    }
-
-    private IndexCommit toCommit(Context context, RevWalk walk, RevCommit revCommit) throws Exception {
+    public IndexCommit doApply(RevCommit revCommit) throws Throwable {
         return IndexCommit.indexCommit()
-            .id(String.format("commit|%s|%s", context.getName(), revCommit.getId().name()))
+            .id(String.format("%s|%s|%s", COMMIT.name().toLowerCase(), context.getName(), revCommit.getId().name()))
             .sha1(revCommit.getId().name())
             .project(context.getName())
             .author(

@@ -12,11 +12,11 @@ import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
 
 import com.bazoud.elasticsearch.river.git.beans.Context;
+import com.bazoud.elasticsearch.river.git.flow.functions.TrackingRefUpdateToRef;
+import com.bazoud.elasticsearch.river.git.guava.MyFunction;
 import com.bazoud.elasticsearch.river.git.jgit.LoggingProgressMonitor;
-import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.base.Predicates;
-import com.google.common.base.Throwables;
 import com.google.common.collect.FluentIterable;
 
 import static org.eclipse.jgit.lib.RefUpdate.Result.NO_CHANGE;
@@ -24,58 +24,41 @@ import static org.eclipse.jgit.lib.RefUpdate.Result.NO_CHANGE;
 /**
  * @author Olivier Bazoud
  */
-public class FetchRepositoryFunction implements Function<Context, Context> {
+public class FetchRepositoryFunction extends MyFunction<Context, Context> {
     private static ESLogger logger = Loggers.getLogger(FetchRepositoryFunction.class);
 
     @Override
-    public Context apply(Context context) {
-        try {
-            final Repository repository = new FileRepositoryBuilder()
-                .setGitDir(context.getProjectPath())
-                    // scan environment GIT_* variables
-                .readEnvironment()
-                .findGitDir()
-                .setMustExist(true)
-                .build();
-            context.setRepository(repository);
+    public Context doApply(Context context) throws Throwable {
+        final Repository repository = new FileRepositoryBuilder()
+            .setGitDir(context.getProjectPath())
+                // scan environment GIT_* variables
+            .readEnvironment()
+            .findGitDir()
+            .setMustExist(true)
+            .build();
+        context.setRepository(repository);
 
-            logger.info("Fetching '{}' repository at path: '{}'", context.getName(), context.getProjectPath());
+        logger.info("Fetching '{}' repository at path: '{}'", context.getName(), context.getProjectPath());
 
-            Git git = new Git(repository);
+        Git git = new Git(repository);
 
-            FetchResult fetchResult = git.fetch()
-                .setProgressMonitor(new LoggingProgressMonitor(logger))
-                .call();
+        FetchResult fetchResult = git.fetch()
+            .setProgressMonitor(new LoggingProgressMonitor(logger))
+            .call();
 
-            Collection<Ref> refs = FluentIterable
-                .from(fetchResult.getTrackingRefUpdates())
-                .filter(Predicates.not(new Predicate<TrackingRefUpdate>() {
-                    @Override
-                    public boolean apply(TrackingRefUpdate input) {
-                        return NO_CHANGE.equals(input.getResult());
-                    }
-                }))
-                .transform(new Function<TrackingRefUpdate, Ref>() {
-                    @Override
-                    public Ref apply(TrackingRefUpdate input) {
-                        try {
-                            return repository.getRef(input.getLocalName());
-                        } catch (Throwable e) {
-                            logger.error(this.getClass().getName(), e);
-                            Throwables.propagate(e);
-                            return null;
-                        }
-                    }
-                })
-                .toList();
+        Collection<Ref> refs = FluentIterable
+            .from(fetchResult.getTrackingRefUpdates())
+            .filter(Predicates.not(new Predicate<TrackingRefUpdate>() {
+                @Override
+                public boolean apply(TrackingRefUpdate input) {
+                    return NO_CHANGE.equals(input.getResult());
+                }
+            }))
+            .transform(new TrackingRefUpdateToRef(repository))
+            .toList();
 
-            context.setRefs(refs);
-            logger.info("Found {} refs to process.", refs.size());
-        } catch (Throwable e) {
-            logger.error(this.getClass().getName(), e);
-            Throwables.propagate(e);
-        }
-
+        context.setRefs(refs);
+        logger.info("Found {} refs to process.", refs.size());
         return context;
     }
 }
