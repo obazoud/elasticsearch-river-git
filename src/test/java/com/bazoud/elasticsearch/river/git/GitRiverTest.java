@@ -96,7 +96,7 @@ public class GitRiverTest {
     public void test20Searching() {
         // Wait for the indexing to take place.
         try {
-            sleep(60000L);
+            sleep(80000L);
         } catch (InterruptedException e) {
             currentThread().interrupt();
         }
@@ -114,7 +114,7 @@ public class GitRiverTest {
             System.out.println("Search result source:" + hit.sourceAsString());
         }
 
-        Assert.assertTrue("There should be at least a 'elasticsearch' mention in the repository",
+        Assert.assertTrue("There should be at least a 'git_repo_tests' mention in the repository",
             searchResponse.getHits().totalHits() > 0);
 
     }

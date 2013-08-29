@@ -1,5 +1,8 @@
 package com.bazoud.elasticsearch.river.git.flow;
 
+import java.util.Iterator;
+import java.util.List;
+
 import org.eclipse.jgit.revwalk.RevWalk;
 import org.elasticsearch.common.logging.ESLogger;
 import org.elasticsearch.common.logging.Loggers;
@@ -7,12 +10,12 @@ import org.elasticsearch.common.logging.Loggers;
 import com.bazoud.elasticsearch.river.git.beans.Context;
 import com.bazoud.elasticsearch.river.git.beans.IndexFile;
 import com.bazoud.elasticsearch.river.git.flow.functions.RefToRevCommit;
+import com.bazoud.elasticsearch.river.git.flow.functions.RevCommitToIndexFile;
 import com.bazoud.elasticsearch.river.git.flow.visitors.BulkVisitor;
-import com.bazoud.elasticsearch.river.git.flow.visitors.IndexFileVisitor;
 import com.bazoud.elasticsearch.river.git.guava.MyFunction;
 import com.bazoud.elasticsearch.river.git.guava.Visitors;
 import com.google.common.collect.FluentIterable;
-import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Iterators;
 
 import static com.bazoud.elasticsearch.river.git.IndexedDocumentType.FILE;
 
@@ -33,19 +36,20 @@ public class FileIndexFunction extends MyFunction<Context, Context> {
                 .toList()
         );
 
-        ImmutableList.Builder builder = ImmutableList.<IndexFile>builder();
-        Visitors.visit(
-            walk,
-            new IndexFileVisitor(context, builder)
-        );
+        Iterator<List<IndexFile>> partitions = Iterators.partition(
+            FluentIterable
+                .from(walk)
+                .transform(new RevCommitToIndexFile(context))
+                .iterator(),
+            100);
 
-        ImmutableList<IndexFile> files = builder.build();
-        logger.info("Found {} index file", files.size());
-
-        Visitors.visit(
-            files,
-            new BulkVisitor(context, FILE.name().toLowerCase())
-        );
+        while (partitions.hasNext()) {
+            List<IndexFile> indexFiles = partitions.next();
+            Visitors.visit(
+                indexFiles,
+                new BulkVisitor(context, FILE.name().toLowerCase())
+            );
+        }
 
         return context;
     }

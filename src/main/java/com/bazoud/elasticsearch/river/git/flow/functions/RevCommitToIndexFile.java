@@ -1,12 +1,9 @@
-package com.bazoud.elasticsearch.river.git.flow.visitors;
+package com.bazoud.elasticsearch.river.git.flow.functions;
 
 import java.io.File;
 import java.io.IOException;
 
-import org.eclipse.jgit.errors.CorruptObjectException;
-import org.eclipse.jgit.errors.IncorrectObjectTypeException;
 import org.eclipse.jgit.errors.LargeObjectException;
-import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
@@ -16,10 +13,7 @@ import org.elasticsearch.common.logging.Loggers;
 
 import com.bazoud.elasticsearch.river.git.beans.Context;
 import com.bazoud.elasticsearch.river.git.beans.IndexFile;
-import com.bazoud.elasticsearch.river.git.guava.Visitor;
-import com.google.common.base.Objects;
-import com.google.common.base.Throwables;
-import com.google.common.collect.ImmutableList;
+import com.bazoud.elasticsearch.river.git.guava.MyFunction;
 import com.google.common.io.Files;
 
 import static com.bazoud.elasticsearch.river.git.IndexedDocumentType.FILE;
@@ -27,22 +21,16 @@ import static com.bazoud.elasticsearch.river.git.IndexedDocumentType.FILE;
 /**
  * @author Olivier Bazoud
  */
-public class IndexFileVisitor implements Visitor<RevCommit> {
-    private static ESLogger logger = Loggers.getLogger(IndexFileVisitor.class);
+public class RevCommitToIndexFile extends MyFunction<RevCommit, IndexFile> {
+    private static ESLogger logger = Loggers.getLogger(RevCommitToIndexFile.class);
     private Context context;
-    private ImmutableList.Builder builder;
 
-    public IndexFileVisitor(Context context, ImmutableList.Builder builder) {
+    public RevCommitToIndexFile(Context context) {
         this.context = context;
-        this.builder = builder;
     }
 
     @Override
-    public void before() {
-    }
-
-    @Override
-    public void visit(RevCommit revCommit) throws Exception {
+    public IndexFile doApply(RevCommit revCommit) throws Throwable {
         RevTree revTree = revCommit.getTree();
         TreeWalk treeWalk = new TreeWalk(context.getRepository());
         treeWalk.addTree(revTree);
@@ -50,15 +38,11 @@ public class IndexFileVisitor implements Visitor<RevCommit> {
         while (treeWalk.next()) {
             ObjectId objectId = treeWalk.getObjectId(0);
             if (objectId != ObjectId.zeroId()) {
-                builder.add(toIndexFile(context, treeWalk, revCommit, objectId));
+                return toIndexFile(context, treeWalk, revCommit, objectId);
             }
         }
+        return null;
     }
-
-    @Override
-    public void after() {
-    }
-
 
     private IndexFile toIndexFile(Context context, TreeWalk treeWalk, RevCommit revCommit, ObjectId objectId) throws IOException {
         File file = new File(treeWalk.getPathString());
