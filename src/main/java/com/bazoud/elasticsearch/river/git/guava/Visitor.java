@@ -6,7 +6,7 @@ package com.bazoud.elasticsearch.river.git.guava;
 public interface Visitor<T> {
     void before();
 
-    void visit(T input);
+    void visit(T input) throws Exception;
 
     void after();
 }

@@ -3,6 +3,10 @@ package com.bazoud.elasticsearch.river.git.flow.visitors;
 import java.io.File;
 import java.io.IOException;
 
+import org.eclipse.jgit.errors.CorruptObjectException;
+import org.eclipse.jgit.errors.IncorrectObjectTypeException;
+import org.eclipse.jgit.errors.LargeObjectException;
+import org.eclipse.jgit.errors.MissingObjectException;
 import org.eclipse.jgit.lib.ObjectId;
 import org.eclipse.jgit.revwalk.RevCommit;
 import org.eclipse.jgit.revwalk.RevTree;
@@ -13,6 +17,7 @@ import org.elasticsearch.common.logging.Loggers;
 import com.bazoud.elasticsearch.river.git.beans.Context;
 import com.bazoud.elasticsearch.river.git.beans.IndexFile;
 import com.bazoud.elasticsearch.river.git.guava.Visitor;
+import com.google.common.base.Objects;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableList;
 import com.google.common.io.Files;
@@ -37,21 +42,16 @@ public class IndexFileVisitor implements Visitor<RevCommit> {
     }
 
     @Override
-    public void visit(RevCommit revCommit) {
-        try {
-            RevTree revTree = revCommit.getTree();
-            TreeWalk treeWalk = new TreeWalk(context.getRepository());
-            treeWalk.addTree(revTree);
-            treeWalk.setRecursive(true);
-            while (treeWalk.next()) {
-                ObjectId objectId = treeWalk.getObjectId(0);
-                if (objectId != ObjectId.zeroId()) {
-                    builder.add(toIndexFile(context, treeWalk, revCommit, objectId));
-                }
+    public void visit(RevCommit revCommit) throws Exception {
+        RevTree revTree = revCommit.getTree();
+        TreeWalk treeWalk = new TreeWalk(context.getRepository());
+        treeWalk.addTree(revTree);
+        treeWalk.setRecursive(true);
+        while (treeWalk.next()) {
+            ObjectId objectId = treeWalk.getObjectId(0);
+            if (objectId != ObjectId.zeroId()) {
+                builder.add(toIndexFile(context, treeWalk, revCommit, objectId));
             }
-        } catch (Throwable e) {
-            logger.error(this.getClass().getName(), e);
-            Throwables.propagate(e);
         }
     }
 
@@ -71,8 +71,20 @@ public class IndexFileVisitor implements Visitor<RevCommit> {
             .path(file.getPath())
             .name(file.getName())
             .extension(Files.getFileExtension(file.getAbsolutePath()))
-            .content(new String(context.getRepository().open(objectId).getBytes()))
+            .content(safeContent(context, objectId))
             .build();
+    }
+
+    private String safeContent(Context context, ObjectId objectId) {
+        String content;
+        try {
+            content = new String(context.getRepository().open(objectId).getBytes());
+        } catch (LargeObjectException e) {
+            content = null;
+        } catch (Exception e) {
+            content = null;
+        }
+        return content;
     }
 
 }

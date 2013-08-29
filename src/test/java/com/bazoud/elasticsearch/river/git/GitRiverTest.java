@@ -1,6 +1,7 @@
 package com.bazoud.elasticsearch.river.git;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -14,6 +15,7 @@ import org.elasticsearch.common.xcontent.XContentBuilder;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.junit.Assert;
+import org.junit.Before;
 import org.junit.FixMethodOrder;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -38,12 +40,20 @@ import static org.elasticsearch.common.xcontent.XContentFactory.jsonBuilder;
 @FixMethodOrder(MethodSorters.NAME_ASCENDING)
 public class GitRiverTest {
     private static final String RIVER_KEYWORD = "_river";
+    private String gitRepository;
 
     @ElasticsearchClient()
     Client client1;
-
     @ElasticsearchAdminClient
     AdminClient adminClient;
+
+    @Before
+    public void setUp() throws URISyntaxException {
+        gitRepository = currentThread().getContextClassLoader()
+            .getResource("git_tests_junit")
+            .toURI()
+            .toString();
+    }
 
     @Test
     @ElasticsearchIndex(indexName = RIVER_KEYWORD)
@@ -61,8 +71,8 @@ public class GitRiverTest {
     public void test10IndexingFromRevision() throws IOException {
         // Index a new document
         Map<String, Object> json = new HashMap<String, Object>();
-        json.put("name", "elasticsearch-river-git");
-        json.put("uri", "git://github.com/obazoud/elasticsearch-river-git.git");
+        json.put("name", "git_repo_tests");
+        json.put("uri", gitRepository);
         json.put("working_dir", "./target/river-workingdir_" + UUID.randomUUID().toString());
         json.put("indexing_diff", false);
 
@@ -86,13 +96,13 @@ public class GitRiverTest {
     public void test20Searching() {
         // Wait for the indexing to take place.
         try {
-            sleep(12000L);
+            sleep(60000L);
         } catch (InterruptedException e) {
             currentThread().interrupt();
         }
 
         SearchResponse searchResponse = client1.prepareSearch("gitriver01")
-            .setQuery(QueryBuilders.matchPhrasePrefixQuery("project", "elasticsearch"))
+            .setQuery(QueryBuilders.matchPhrasePrefixQuery("project", "git_repo_tests"))
             .execute()
             .actionGet();
 

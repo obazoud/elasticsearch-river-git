@@ -7,7 +7,7 @@ public final class Visitors {
     private Visitors() {
     }
 
-    public static <T> void visit(Iterable<T> iterable, Visitor<T> visitor) {
+    public static <T> void visit(Iterable<T> iterable, Visitor<T> visitor) throws Exception {
         visitor.before();
         for (T current : iterable) {
             visitor.visit(current);
