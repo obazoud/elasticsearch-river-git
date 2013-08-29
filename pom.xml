@@ -9,7 +9,7 @@
   <groupId>com.bazoud.elasticsearch</groupId>
   <artifactId>elasticsearch-river-git</artifactId>
   <packaging>jar</packaging>
-  <version>0.1.0</version>
+  <version>0.1.1-SNAPSHOT</version>
   <name>Git River for ElasticSearch</name>
   <description>Git River for ElasticSearch</description>
   <url>https://github.com/obazoud/elasticsearch-river-git</url>
