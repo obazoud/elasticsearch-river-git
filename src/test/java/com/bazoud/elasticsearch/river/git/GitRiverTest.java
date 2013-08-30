@@ -74,6 +74,7 @@ public class GitRiverTest {
         json.put("name", "git_repo_tests");
         json.put("uri", gitRepository);
         json.put("working_dir", "./target/river-workingdir_" + UUID.randomUUID().toString());
+        json.put("issue_regex", "#(\\d*)");
         json.put("indexing_diff", false);
 
         XContentBuilder builder = jsonBuilder()
@@ -94,9 +95,10 @@ public class GitRiverTest {
     @Test
     @ElasticsearchIndex(indexName = RIVER_KEYWORD)
     public void test20Searching() {
-        // Wait for the indexing to take place.
+        String waitingIndex = System.getProperty("waitingIndex", "20000");
+        System.out.println("Wait for the indexing to take place: " + waitingIndex);
         try {
-            sleep(80000L);
+            sleep(Long.parseLong(waitingIndex));
         } catch (InterruptedException e) {
             currentThread().interrupt();
         }
