@@ -69,9 +69,9 @@
         <version>${elasticsearch.version}</version>
       </dependency>
       <dependency>
-          <groupId>com.google.guava</groupId>
-          <artifactId>guava</artifactId>
-          <version>14.0.1</version>
+        <groupId>com.google.guava</groupId>
+        <artifactId>guava</artifactId>
+        <version>14.0.1</version>
       </dependency>
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
@@ -96,9 +96,9 @@
         <scope>provided</scope>
       </dependency>
       <dependency>
-          <groupId>commons-beanutils</groupId>
-          <artifactId>commons-beanutils</artifactId>
-          <version>1.8.3</version>
+        <groupId>commons-beanutils</groupId>
+        <artifactId>commons-beanutils</artifactId>
+        <version>1.8.3</version>
       </dependency>
       <dependency>
         <groupId>junit</groupId>
@@ -249,7 +249,7 @@
               </goals>
               <configuration>
                 <rules>
-                  <requirePluginVersions />
+                  <requirePluginVersions/>
                 </rules>
               </configuration>
             </execution>
